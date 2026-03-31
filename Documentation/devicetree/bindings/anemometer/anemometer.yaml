@@ -57,6 +57,25 @@ properties:
     default: 0
     description: Zero offset in micrometers per second (um/s)
 
+  pull:
+    $ref: /schemas/types.yaml#/definitions/string
+    enum:
+      - "up"
+      - "down"
+      - "none"
+    default: "none"
+    description: |
+      GPIO pull configuration. Use "up" for pull-up, "down" for pull-down,
+      or "none" for no pull (default). Useful for open-collector/open-drain sensors.
+
+  debounce-us:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    default: 0
+    description: |
+      Debounce time in microseconds. Set to 0 to disable debouncing.
+      Useful for filtering noise from mechanical switches or sensors.
+      Note: Not all GPIO controllers support debouncing.
+
 required:
   - compatible
   - label
@@ -77,5 +96,7 @@ examples:
             slope = <100>;
             slope-div = <1000>;
             offset = <0>;
+            pull = "up";              /* Enable pull-up for open-collector sensor */
+            debounce-us = <1000>;     /* 1ms debounce to filter noise */
         };
     };

@@ -80,7 +80,24 @@ static int anemometer_dt_parse_sensor(struct device_node *np)
     
     if (!of_property_read_u32(np, "offset", &val))
         sensor->offset = val;
-    
+
+    /* Parse pull configuration */
+    const char *pull_str;
+    if (!of_property_read_string(np, "pull", &pull_str)) {
+        if (strcmp(pull_str, "up") == 0)
+            sensor->pull = ANEMOMETER_PULL_UP;
+        else if (strcmp(pull_str, "down") == 0)
+            sensor->pull = ANEMOMETER_PULL_DOWN;
+        else if (strcmp(pull_str, "none") == 0)
+            sensor->pull = ANEMOMETER_PULL_NONE;
+        else
+            pr_warn("anemometer: '%s' invalid pull '%s', using none\n", name, pull_str);
+    }
+
+    /* Parse debounce configuration */
+    if (!of_property_read_u32(np, "debounce-us", &val))
+        sensor->debounce_us = val;
+
     /* Request IRQ */
     ret = request_irq(sensor->irq, anemometer_irq_handler,
                        IRQF_TRIGGER_RISING, "anemometer", sensor);

@@ -98,6 +98,8 @@ struct anemometer_sensor *anemometer_sensor_create(const char *name)
     sensor->slope_num = ANEMOMETER_DEFAULT_SLOPE_NUM;
     sensor->slope_den = ANEMOMETER_DEFAULT_SLOPE_DEN;
     sensor->offset = ANEMOMETER_DEFAULT_OFFSET;
+    sensor->pull = ANEMOMETER_PULL_NONE;
+    sensor->debounce_us = ANEMOMETER_DEFAULT_DEBOUNCE_US;
     atomic_set(&sensor->pulse_count, 0);
     mutex_init(&sensor->lock);
     INIT_LIST_HEAD(&sensor->list);
@@ -177,6 +179,27 @@ int anemometer_sensor_setup_gpio(struct anemometer_sensor *sensor, u32 gpio_num)
     if (ret) {
         pr_err("anemometer: failed to set GPIO %u as input: %d\n", gpio_num, ret);
         return ret;
+    }
+    
+    /* Configure pull-up/pull-down if specified */
+    /* Note: gpiod_set_pull() is not available in all kernel versions.
+     * On newer kernels, use device tree "bias-pull-up" / "bias-pull-down" properties.
+     * On older kernels, pull may need to be configured via platform-specific means.
+     */
+    if (sensor->pull != ANEMOMETER_PULL_NONE) {
+        pr_info("anemometer: GPIO %u pull-%s requested (device tree bias-* properties recommended)\n",
+                gpio_num, sensor->pull == ANEMOMETER_PULL_UP ? "up" : "down");
+    }
+    
+    /* Configure debounce if specified */
+    if (sensor->debounce_us > 0) {
+        ret = gpiod_set_debounce(sensor->gpio, sensor->debounce_us);
+        if (ret) {
+            pr_warn("anemometer: failed to set debounce on GPIO %u: %d\n", gpio_num, ret);
+            /* Continue anyway - not all GPIO controllers support this */
+        } else {
+            pr_info("anemometer: GPIO %u debounce %u us configured\n", gpio_num, sensor->debounce_us);
+        }
     }
     
     sensor->irq = gpiod_to_irq(sensor->gpio);

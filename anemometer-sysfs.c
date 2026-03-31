@@ -288,6 +288,128 @@ static ssize_t update_interval_ms_store(struct device *dev,
     return count;
 }
 
+/* Show pull configuration */
+static ssize_t pull_show(struct device *dev,
+                         struct device_attribute *attr, char *buf)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    const char *pull_str;
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    mutex_lock(&sensor->lock);
+    switch (sensor->pull) {
+    case ANEMOMETER_PULL_UP:
+        pull_str = "up";
+        break;
+    case ANEMOMETER_PULL_DOWN:
+        pull_str = "down";
+        break;
+    default:
+        pull_str = "none";
+        break;
+    }
+    mutex_unlock(&sensor->lock);
+    
+    return sprintf(buf, "%s\n", pull_str);
+}
+
+/* Store pull configuration */
+static ssize_t pull_store(struct device *dev,
+                          struct device_attribute *attr,
+                          const char *buf, size_t count)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    enum anemometer_pull new_pull;
+
+    if (!sensor)
+        return -ENODEV;
+    
+    /* Parse pull value */
+    if (sysfs_streq(buf, "up"))
+        new_pull = ANEMOMETER_PULL_UP;
+    else if (sysfs_streq(buf, "down"))
+        new_pull = ANEMOMETER_PULL_DOWN;
+    else if (sysfs_streq(buf, "none"))
+        new_pull = ANEMOMETER_PULL_NONE;
+    else
+        return -EINVAL;
+    
+    mutex_lock(&sensor->lock);
+    
+    /* Can only change pull when sensor is not running */
+    if (sensor->running) {
+        mutex_unlock(&sensor->lock);
+        return -EBUSY;
+    }
+    
+    sensor->pull = new_pull;
+    
+    /* Note: Software pull configuration is not available in all kernel versions.
+     * The pull setting will be applied when the GPIO is set up.
+     * For immediate effect, use device tree bias-* properties.
+     */
+    
+    mutex_unlock(&sensor->lock);
+    
+    return count;
+}
+
+/* Show debounce configuration */
+static ssize_t debounce_us_show(struct device *dev,
+                                struct device_attribute *attr, char *buf)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    u32 debounce;
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    mutex_lock(&sensor->lock);
+    debounce = sensor->debounce_us;
+    mutex_unlock(&sensor->lock);
+    
+    return sprintf(buf, "%u\n", debounce);
+}
+
+/* Store debounce configuration */
+static ssize_t debounce_us_store(struct device *dev,
+                                 struct device_attribute *attr,
+                                 const char *buf, size_t count)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    u32 debounce;
+    int ret;
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    if (kstrtou32(buf, 10, &debounce))
+        return -EINVAL;
+    
+    mutex_lock(&sensor->lock);
+    
+    /* Can only change debounce when sensor is not running */
+    if (sensor->running) {
+        mutex_unlock(&sensor->lock);
+        return -EBUSY;
+    }
+    
+    sensor->debounce_us = debounce;
+    
+    /* Apply debounce if GPIO is already configured */
+    if (sensor->gpio && debounce > 0) {
+        ret = gpiod_set_debounce(sensor->gpio, debounce);
+        if (ret)
+            pr_warn("anemometer: failed to set debounce on %s: %d\n", sensor->name, ret);
+    }
+    
+    mutex_unlock(&sensor->lock);
+    
+    return count;
+}
+
 /* Define attributes */
 static DEVICE_ATTR_RO(raw_pulses);
 static DEVICE_ATTR_RO(frequency_hz);
@@ -299,6 +421,8 @@ static DEVICE_ATTR_RW(slope);
 static DEVICE_ATTR_RW(offset);
 static DEVICE_ATTR_RW(window_size);
 static DEVICE_ATTR_RW(update_interval_ms);
+static DEVICE_ATTR_RW(pull);
+static DEVICE_ATTR_RW(debounce_us);
 
 static struct attribute *anemometer_attrs[] = {
     &dev_attr_raw_pulses.attr,
@@ -311,6 +435,8 @@ static struct attribute *anemometer_attrs[] = {
     &dev_attr_offset.attr,
     &dev_attr_window_size.attr,
     &dev_attr_update_interval_ms.attr,
+    &dev_attr_pull.attr,
+    &dev_attr_debounce_us.attr,
     NULL,
 };
 

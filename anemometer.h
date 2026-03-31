@@ -21,12 +21,20 @@
 #define ANEMOMETER_DEFAULT_SLOPE_NUM        100   /* 0.1 * 1000 */
 #define ANEMOMETER_DEFAULT_SLOPE_DEN        1000
 #define ANEMOMETER_DEFAULT_OFFSET           0
+#define ANEMOMETER_DEFAULT_DEBOUNCE_US      0     /* disabled */
 #define ANEMOMETER_MIN_WINDOW_SIZE          1
 #define ANEMOMETER_MAX_WINDOW_SIZE          60
 #define ANEMOMETER_MIN_UPDATE_INTERVAL      100   /* ms */
 #define ANEMOMETER_MAX_UPDATE_INTERVAL      10000 /* ms */
 #define ANEMOMETER_MAX_FREQ_HZ              200
 #define ANEMOMETER_STALE_TIMEOUT_SEC        120  /* 2 * max window */
+
+/* Pull configuration */
+enum anemometer_pull {
+    ANEMOMETER_PULL_NONE = 0,
+    ANEMOMETER_PULL_UP,
+    ANEMOMETER_PULL_DOWN,
+};
 
 struct anemometer_sensor {
     char name[32];
@@ -39,6 +47,8 @@ struct anemometer_sensor {
     s32 slope_num;
     u32 slope_den;
     s32 offset;
+    enum anemometer_pull pull;
+    u32 debounce_us;
     
     /* Runtime data */
     atomic_t pulse_count;

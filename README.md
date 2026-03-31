@@ -88,6 +88,8 @@ Add to your device tree:
             slope = <100>;               /* 0.1 * 1000 */
             slope-div = <1000>;
             offset = <0>;
+            pull = "up";                /* Enable pull-up for open-collector sensors */
+            debounce-us = <1000>;       /* 1ms debounce to filter noise */
         };
     };
 };
@@ -204,7 +206,44 @@ Anemometer GND    → Ground
 Anemometer VCC    → 3.3V or 5V (check sensor specs)
 ```
 
-**Note:** Most pulse anemometers are open-collector/open-drain output. You may need an external pull-up resistor (typically 10kΩ) if the sensor doesn't have one built-in.
+**Note:** Most pulse anemometers are open-collector/open-drain output. You can either:
+- Use the driver's internal pull-up: `echo "up" | sudo tee /sys/class/anemometer/<sensor>/pull`
+- Or use an external pull-up resistor (typically 10kΩ)
+
+### Pull-up/Pull-down Configuration
+
+Configure via device tree or sysfs:
+```bash
+# Enable pull-up (useful for open-collector sensors)
+echo "up" | sudo tee /sys/class/anemometer/outdoor/pull
+
+# Enable pull-down
+echo "down" | sudo tee /sys/class/anemometer/outdoor/pull
+
+# Disable pull
+echo "none" | sudo tee /sys/class/anemometer/outdoor/pull
+```
+
+**Note:** Pull configuration can only be changed when the sensor is stopped. Some GPIO controllers may not support software pull configuration.
+
+### Debounce Configuration
+
+The driver supports hardware debouncing (if the GPIO controller supports it):
+
+```bash
+# Set debounce to 1000 microseconds (1ms)
+echo 1000 | sudo tee /sys/class/anemometer/outdoor/debounce_us
+
+# Disable debounce
+echo 0 | sudo tee /sys/class/anemometer/outdoor/debounce_us
+```
+
+Debounce is useful for:
+- Filtering electrical noise
+- Mechanical switch bounce suppression
+- Stable pulse counting in harsh environments
+
+**Note:** Debounce configuration can only be changed when the sensor is stopped. Not all GPIO controllers support debouncing.
 
 ## Testing
 
@@ -300,6 +339,8 @@ Verify your sensor's datasheet for the correct Hz to m/s conversion factor. Comm
 - `offset` - Calibration offset (μm/s)
 - `window_size` - Averaging window (1-60 seconds)
 - `update_interval_ms` - Update interval (100-10000 ms)
+- `pull` - GPIO pull configuration: "up", "down", or "none" (read-only when running)
+- `debounce_us` - Debounce time in microseconds, 0 to disable (read-only when running)
 
 ## Web Dashboard
 

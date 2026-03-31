@@ -16,7 +16,7 @@ static void __exit anemometer_exit(void);
 
 struct anemometer_drv anemometer_drv;
 
-static irqreturn_t anemometer_irq_handler(int irq, void *dev_id)
+irqreturn_t anemometer_irq_handler(int irq, void *dev_id)
 {
     struct anemometer_sensor *sensor = dev_id;
     atomic_inc(&sensor->pulse_count);
@@ -242,7 +242,12 @@ static int __init anemometer_init(void)
     if (ret) {
         pr_warn("anemometer: ConfigFS not available\n");
     }
-    
+
+    ret = anemometer_dt_init();
+    if (ret) {
+        pr_warn("anemometer: device tree support not available\n");
+    }
+
     pr_info("anemometer: driver loaded\n");
     return 0;
     
@@ -262,7 +267,8 @@ static void __exit anemometer_exit(void)
         anemometer_sensor_destroy(sensor);
     }
     mutex_unlock(&anemometer_drv.sensors_lock);
-    
+
+    anemometer_dt_exit();
     anemometer_configfs_exit();
     anemometer_chrdev_exit();
     class_destroy(anemometer_drv.class);

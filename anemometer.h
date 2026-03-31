@@ -84,6 +84,12 @@ extern int anemometer_sensor_create_chrdev(const char *name, u32 gpio);
 extern void anemometer_sensor_destroy(struct anemometer_sensor *sensor);
 extern struct anemometer_sensor *anemometer_sensor_find(const char *name);
 
+extern irqreturn_t anemometer_irq_handler(int irq, void *dev_id);
+extern int anemometer_sensor_setup_gpio(struct anemometer_sensor *sensor, u32 gpio_num);
+
+int anemometer_dt_init(void);
+void anemometer_dt_exit(void);
+
 int anemometer_sysfs_register(struct anemometer_sensor *sensor);
 void anemometer_sysfs_unregister(struct anemometer_sensor *sensor);
 

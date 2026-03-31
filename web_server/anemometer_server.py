@@ -59,8 +59,8 @@ def read_sensor_data(sensor_name):
         data = {}
         
         # Read all attributes
-        for attr in ["wind_speed_ms", "wind_speed_kmh", "frequency_hz", 
-                     "raw_pulses", "stale", "pulse_count_total"]:
+        for attr in ["wind_speed_ms", "wind_speed_kmh", "frequency_hz",
+                     "raw_pulses", "stale", "pulse_count_total", "pull", "debounce_us"]:
             try:
                 with open(sensor_path / attr, "r") as f:
                     value = f.read().strip()

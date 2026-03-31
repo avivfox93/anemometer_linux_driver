@@ -72,9 +72,9 @@ static ssize_t wind_speed_kmh_show(struct device *dev,
     mutex_unlock(&sensor->lock);
     
     /* Convert um/s to km/h: * 3600 / 1,000,000,000 */
-    kmh = (s64)speed * 36 / 10000;
-    
-    return sprintf(buf, "%lld.%03lld\n", kmh / 1000, abs(kmh) % 1000);
+    kmh = div_s64((s64)speed * 36, 10000);
+
+    return sprintf(buf, "%lld.%03lld\n", kmh / 1000, abs64(kmh) % 1000);
 }
 
 /* Show total pulses */
@@ -213,28 +213,37 @@ static ssize_t window_size_store(struct device *dev,
     struct anemometer_sensor *sensor = dev_get_drvdata(dev);
     u32 *new_buffer;
     u32 size;
-    
+
     if (!sensor)
         return -ENODEV;
-    
+
     if (kstrtou32(buf, 10, &size))
         return -EINVAL;
-    
+
     if (size < ANEMOMETER_MIN_WINDOW_SIZE || size > ANEMOMETER_MAX_WINDOW_SIZE)
         return -EINVAL;
-    
-    new_buffer = kcalloc(size, sizeof(u32), GFP_KERNEL);
-    if (!new_buffer)
-        return -ENOMEM;
-    
+
     mutex_lock(&sensor->lock);
+
+    /*
+     * Note: If worker is currently reading pulse_buffer, it may
+     * see inconsistent data briefly. Consider stopping worker
+     * before resize for critical applications.
+     */
+
+    new_buffer = kcalloc(size, sizeof(u32), GFP_KERNEL);
+    if (!new_buffer) {
+        mutex_unlock(&sensor->lock);
+        return -ENOMEM;
+    }
+
     kfree(sensor->pulse_buffer);
     sensor->pulse_buffer = new_buffer;
     sensor->window_size = size;
     sensor->buffer_head = 0;
     sensor->buffer_count = 0;
     mutex_unlock(&sensor->lock);
-    
+
     return count;
 }
 

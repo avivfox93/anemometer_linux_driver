@@ -143,6 +143,31 @@ Add to your device tree:
 };
 ```
 
+### Raspberry Pi Device Tree Overlay (Recommended)
+
+For Raspberry Pi, use the provided overlay for easy GPIO configuration:
+
+```bash
+# Copy overlay to /boot/overlays/
+sudo cp overlays/anemometer-gpio26.dts /boot/overlays/
+
+# Compile the overlay
+sudo dtc -I dts -O dtb -o /boot/overlays/anemometer-gpio26.dtbo /boot/overlays/anemometer-gpio26.dts
+
+# Enable in /boot/config.txt
+echo "dtoverlay=anemometer-gpio26" | sudo tee -a /boot/config.txt
+
+# Reboot
+sudo reboot
+```
+
+This overlay configures GPIO 26 (Physical Pin 37) with internal pull-up enabled - perfect for open-collector anemometers.
+
+**Available overlays:**
+- `anemometer-gpio26.dts` - GPIO 26 with pull-up
+
+See `overlays/README.md` for creating custom overlays for other GPIOs.
+
 ### Method 2: Character Device (Runtime)
 
 The driver creates `/dev/anemometer` for runtime sensor management:
@@ -447,5 +472,6 @@ For issues and questions, please use the GitHub issue tracker.
 ## Related Documentation
 
 - Device Tree binding: `Documentation/devicetree/bindings/anemometer/anemometer.yaml`
+- Raspberry Pi overlays: `overlays/` (Device Tree overlays for easy GPIO configuration)
 - Design specification: `docs/superpowers/specs/2025-03-31-anemometer-design.md`
 - Implementation plan: `docs/superpowers/plans/2025-03-31-anemometer-implementation.md`

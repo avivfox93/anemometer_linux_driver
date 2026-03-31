@@ -1,0 +1,37 @@
+menu "Anemometer Driver"
+
+config ANEMOMETER
+	tristate "Anemometer wind sensor driver"
+	depends on GPIOLIB
+	help
+	  This driver supports generic anemometer wind sensors connected
+	  via GPIO pins. It provides sysfs and character device interfaces
+	  for reading wind speed measurements.
+
+	  The driver supports configuration through Device Tree, ConfigFS,
+	  or the character device interface.
+
+	  To compile this driver as a module, choose M here. The module
+	  will be called anemometer.
+
+config ANEMOMETER_CONFIGFS
+	bool "Anemometer ConfigFS support"
+	depends on ANEMOMETER
+	depends on CONFIGFS_FS
+	help
+	  Enable ConfigFS support for the anemometer driver. This allows
+	  creating anemometer sensors dynamically through the ConfigFS
+	  filesystem at /sys/kernel/config/anemometer/.
+
+	  If unsure, say N.
+
+config ANEMOMETER_DEBUG
+	bool "Anemometer debugging messages"
+	depends on ANEMOMETER
+	help
+	  Enable debug messages for the anemometer driver. This will
+	  print additional diagnostic information to the kernel log.
+
+	  If unsure, say N.
+
+endmenu

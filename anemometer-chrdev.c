@@ -75,7 +75,6 @@ static ssize_t anemometer_chrdev_write(struct file *file, const char __user *buf
 {
     char *kbuf;
     char cmd[16], name[32];
-    u32 gpio;
     int ret;
     struct anemometer_sensor *sensor;
     
@@ -185,7 +184,7 @@ static const struct file_operations anemometer_chrdev_fops = {
     .release = anemometer_chrdev_release,
     .read = anemometer_chrdev_read,
     .write = anemometer_chrdev_write,
-    .llseek = no_llseek,
+    .llseek = noop_llseek,
 };
 
 int anemometer_chrdev_init(void)

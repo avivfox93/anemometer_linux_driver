@@ -226,7 +226,7 @@ static int __init anemometer_init(void)
     INIT_LIST_HEAD(&anemometer_drv.sensors);
     anemometer_drv.sensor_count = 0;
     
-    anemometer_drv.class = class_create(THIS_MODULE, ANEMOMETER_CLASS_NAME);
+    anemometer_drv.class = class_create(ANEMOMETER_CLASS_NAME);
     if (IS_ERR(anemometer_drv.class)) {
         ret = PTR_ERR(anemometer_drv.class);
         pr_err("anemometer: failed to create class: %d\n", ret);

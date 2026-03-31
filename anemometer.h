@@ -5,6 +5,12 @@
 #include <linux/gpio/consumer.h>
 #include <linux/mutex.h>
 #include <linux/atomic.h>
+#include <linux/interrupt.h>
+#include <linux/cdev.h>
+#include <linux/fs.h>
+#if IS_ENABLED(CONFIG_CONFIGFS_FS)
+#include <linux/configfs.h>
+#endif
 
 #define ANEMOMETER_NAME "anemometer"
 #define ANEMOMETER_CLASS_NAME "anemometer"

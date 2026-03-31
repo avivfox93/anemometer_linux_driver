@@ -74,7 +74,7 @@ static ssize_t wind_speed_kmh_show(struct device *dev,
     /* Convert um/s to km/h: * 3600 / 1,000,000,000 */
     kmh = div_s64((s64)speed * 36, 10000);
 
-    return sprintf(buf, "%lld.%03lld\n", kmh / 1000, abs64(kmh) % 1000);
+    return sprintf(buf, "%lld.%03lld\n", kmh / 1000, (kmh < 0 ? -kmh : kmh) % 1000);
 }
 
 /* Show total pulses */
@@ -206,7 +206,7 @@ static ssize_t window_size_show(struct device *dev,
     return sprintf(buf, "%u\n", size);
 }
 
-static ssize_t window_size_store(struct device *dev,
+ssize_t window_size_store(struct device *dev,
                                  struct device_attribute *attr,
                                  const char *buf, size_t count)
 {

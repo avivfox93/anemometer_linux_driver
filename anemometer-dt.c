@@ -12,7 +12,6 @@ static int anemometer_dt_parse_sensor(struct device_node *np)
     const char *name;
     u32 val;
     int ret;
-    struct gpio_desc *gpio;
     
     /* Get label */
     ret = of_property_read_string(np, "label", &name);
@@ -32,15 +31,18 @@ static int anemometer_dt_parse_sensor(struct device_node *np)
     if (IS_ERR(sensor))
         return PTR_ERR(sensor);
     
-    /* Parse GPIO */
-    gpio = gpiod_get_from_of_node(np, NULL, 0, GPIOD_IN, name);
-    if (IS_ERR(gpio)) {
-        pr_err("anemometer: failed to get GPIO for '%s': %ld\n", 
-               name, PTR_ERR(gpio));
-        ret = PTR_ERR(gpio);
+    /* Parse GPIO using of_get_named_gpio() for compatibility */
+    ret = of_get_named_gpio(np, "gpios", 0);
+    if (ret < 0) {
+        pr_err("anemometer: failed to get GPIO for '%s': %d\n", name, ret);
         goto err_free;
     }
-    sensor->gpio = gpio;
+    sensor->gpio = gpio_to_desc(ret);
+    if (!sensor->gpio) {
+        pr_err("anemometer: invalid GPIO for '%s'\n", name);
+        ret = -EINVAL;
+        goto err_free;
+    }
     
     /* Get IRQ */
     sensor->irq = gpiod_to_irq(sensor->gpio);
@@ -126,10 +128,9 @@ static int anemometer_dt_probe(struct platform_device *pdev)
     return 0;
 }
 
-static int anemometer_dt_remove(struct platform_device *pdev)
+static void anemometer_dt_remove(struct platform_device *pdev)
 {
     /* Sensors are cleaned up in anemometer_exit */
-    return 0;
 }
 
 static const struct of_device_id anemometer_dt_ids[] = {

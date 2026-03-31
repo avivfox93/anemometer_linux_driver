@@ -29,7 +29,6 @@ static ssize_t anemometer_config_gpio_store(struct config_item *item,
 {
     struct anemometer_config_item *ci = to_anemometer_item(item);
     u32 gpio;
-    int ret;
     
     if (kstrtou32(page, 10, &gpio))
         return -EINVAL;

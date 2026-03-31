@@ -5,6 +5,7 @@
 #include <linux/slab.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
+#include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
 #include <linux/interrupt.h>
 #include <linux/kthread.h>
@@ -169,9 +170,16 @@ int anemometer_sensor_setup_gpio(struct anemometer_sensor *sensor, u32 gpio_num)
 {
     int ret;
     
+    /* 
+     * Try to get GPIO descriptor using legacy numbering.
+     * Note: On modern kernels with gpiochip (Raspberry Pi 4, etc.),
+     * legacy GPIO numbering may not work. Use device tree or ConfigFS instead.
+     */
     sensor->gpio = gpio_to_desc(gpio_num);
     if (!sensor->gpio) {
         pr_err("anemometer: invalid GPIO %u\n", gpio_num);
+        pr_err("anemometer: On systems with gpiochip (RPi4), use device tree or ConfigFS instead\n");
+        pr_err("anemometer: See README.md for device tree overlay examples\n");
         return -EINVAL;
     }
     

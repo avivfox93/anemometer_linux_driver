@@ -14,19 +14,19 @@
 / {
 	compatible = "brcm,bcm2835";
 
-	// Fragment to enable GPIO 26
+	/* Fragment to configure GPIO 26 with pull-up */
 	fragment@0 {
 		target = <&gpio>;
 		__overlay__ {
 			anemometer_pins: anemometer_pins {
-				brcm,pins = <26>;           // GPIO 26 (Physical Pin 37)
-				brcm,function = <0>;         // GPIO input (0 = input, 1 = output)
-				brcm,pull = <2>;             // Pull-up (0 = none, 1 = down, 2 = up)
+				brcm,pins = <26>;           /* GPIO 26 (Physical Pin 37) */
+				brcm,function = <0>;         /* 0 = input */
+				brcm,pull = <2>;             /* 2 = pull-up (0=none, 1=down, 2=up) */
 			};
 		};
 	};
 
-	// Fragment to create anemometer node
+	/* Fragment to create anemometer node */
 	fragment@1 {
 		target-path = "/";
 		__overlay__ {
@@ -36,29 +36,18 @@
 				pinctrl-names = "default";
 				pinctrl-0 = <&anemometer_pins>;
 
-				// Single sensor on GPIO 26
+				/* Single sensor on GPIO 26 */
 				sensor@0 {
 					label = "wind";
-					gpios = <&gpio 26 GPIO_ACTIVE_HIGH>;
+					/* GPIO_ACTIVE_HIGH = 0, using numeric value */
+					gpios = <&gpio 26 0>;
 					
-					// Averaging window: 5 seconds
 					window-size = <5>;
-					
-					// Update interval: 1000ms (1 second)
 					update-interval = <1000>;
-					
-					// Calibration: 0.1 m/s per Hz (default)
 					slope = <100>;
 					slope-div = <1000>;
-					
-					// Zero offset
 					offset = <0>;
-					
-					// Pull-up is handled by pinctrl above, but you can also specify:
 					pull = "up";
-					
-					// Optional: Enable debounce (hardware-dependent)
-					// debounce-us = <1000>;  // 1ms debounce
 				};
 			};
 		};

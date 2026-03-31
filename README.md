@@ -68,8 +68,11 @@ This will produce `anemometer.ko` - the kernel module.
 
 ```bash
 sudo make install
-sudo depmod -a
 ```
+
+This will:
+1. Copy `anemometer.ko` to the kernel modules directory
+2. Run `depmod -a` to update module dependencies
 
 Or manually:
 
@@ -78,13 +81,34 @@ sudo cp anemometer.ko /lib/modules/$(uname -r)/kernel/drivers/
 sudo depmod -a
 ```
 
+### Uninstall
+
+```bash
+sudo make uninstall
+```
+
+### Quick Load/Unload
+
+```bash
+# Load the module
+sudo make load
+
+# Unload the module
+sudo make unload
+
+# Reload (unload + load)
+sudo make reload
+```
+
 ## Usage
 
 ### Loading the Module
 
+After installation:
+
 ```bash
 sudo modprobe anemometer
-# or
+# or if not installed
 sudo insmod anemometer.ko
 ```
 

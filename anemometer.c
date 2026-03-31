@@ -51,7 +51,10 @@ static int anemometer_worker(void *data)
         for (i = 0; i < sensor->buffer_count; i++)
             sum += sensor->pulse_buffer[i];
         
-        freq = (sum * 1000) / (sensor->buffer_count * sensor->update_interval_ms);
+        if (sensor->buffer_count > 0)
+            freq = (sum * 1000) / (sensor->buffer_count * sensor->update_interval_ms);
+        else
+            freq = 0;
         
         /* Check for impossible frequency */
         if (freq > ANEMOMETER_MAX_FREQ_HZ * 1000) {
@@ -120,8 +123,10 @@ void anemometer_sensor_destroy(struct anemometer_sensor *sensor)
     
     if (sensor->running) {
         sensor->running = false;
-        if (sensor->worker)
+        if (sensor->worker) {
             kthread_stop(sensor->worker);
+            sensor->worker = NULL;
+        }
     }
     
     if (sensor->irq > 0)

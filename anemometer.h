@@ -75,11 +75,14 @@ struct anemometer_drv {
 extern struct anemometer_drv anemometer_drv;
 
 /* Function prototypes */
-int anemometer_sensor_create_dt(struct platform_device *pdev);
-int anemometer_sensor_create_configfs(const char *name);
-int anemometer_sensor_create_chrdev(const char *name, u32 gpio);
-void anemometer_sensor_destroy(struct anemometer_sensor *sensor);
-struct anemometer_sensor *anemometer_sensor_find(const char *name);
+extern struct anemometer_sensor *anemometer_sensor_create(const char *name);
+extern int anemometer_sensor_setup_gpio(struct anemometer_sensor *sensor, u32 gpio_num);
+extern int anemometer_sensor_start(struct anemometer_sensor *sensor);
+extern int anemometer_sensor_create_dt(struct platform_device *pdev);
+extern int anemometer_sensor_create_configfs(const char *name);
+extern int anemometer_sensor_create_chrdev(const char *name, u32 gpio);
+extern void anemometer_sensor_destroy(struct anemometer_sensor *sensor);
+extern struct anemometer_sensor *anemometer_sensor_find(const char *name);
 
 int anemometer_sysfs_register(struct anemometer_sensor *sensor);
 void anemometer_sysfs_unregister(struct anemometer_sensor *sensor);
@@ -90,4 +93,4 @@ void anemometer_configfs_exit(void);
 int anemometer_chrdev_init(void);
 void anemometer_chrdev_exit(void);
 
-#endif /* _ANEMOMETER_H_ */
+#endif /* _ANEMOMETER_H */

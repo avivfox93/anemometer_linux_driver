@@ -21,6 +21,7 @@ This driver supports anemometer sensors that output a pulse signal with frequenc
 - ✓ Stale data detection
 - ✓ Three instantiation methods
 - ✓ Linux 5.4+ and 6.x compatible
+- ✓ **Web Dashboard** - Real-time visualization (see `web_server/`)
 
 ## Building
 
@@ -299,6 +300,25 @@ Verify your sensor's datasheet for the correct Hz to m/s conversion factor. Comm
 - `offset` - Calibration offset (μm/s)
 - `window_size` - Averaging window (1-60 seconds)
 - `update_interval_ms` - Update interval (100-10000 ms)
+
+## Web Dashboard
+
+A Python web server is included for real-time visualization:
+
+```bash
+cd web_server
+python3 anemometer_server.py
+```
+
+Then open http://localhost:8080 in your browser.
+
+Features:
+- 📊 Real-time wind speed charts
+- 📈 Historical data visualization
+- 🔄 Auto-refresh with live updates
+- 📱 Mobile-friendly responsive design
+
+See `web_server/README.md` for more details.
 
 ## License
 

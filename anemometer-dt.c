@@ -4,18 +4,15 @@
 #include <linux/of.h>
 #include <linux/of_gpio.h>
 #include <linux/slab.h>
-#include <linux/gpio.h>
 #include "anemometer.h"
 
 static int anemometer_dt_parse_sensor(struct device_node *np)
 {
     struct anemometer_sensor *sensor;
     const char *name;
-    u32 gpio_prop;
     u32 val;
     int ret;
     struct gpio_desc *gpio;
-    enum of_gpio_flags flags;
     
     /* Get label */
     ret = of_property_read_string(np, "label", &name);
@@ -71,8 +68,11 @@ static int anemometer_dt_parse_sensor(struct device_node *np)
     if (!of_property_read_u32(np, "slope", &val))
         sensor->slope_num = val;
     
-    if (!of_property_read_u32(np, "slope-div", &val))
+    if (!of_property_read_u32(np, "slope-div", &val)) {
+        if (val == 0)
+            return -EINVAL;
         sensor->slope_den = val;
+    }
     
     if (!of_property_read_u32(np, "offset", &val))
         sensor->offset = val;

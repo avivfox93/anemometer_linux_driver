@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/anemometer/anemometer.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Generic Anemometer Wind Sensor
+
+maintainers:
+  - Anemometer Driver Team
+
+description: |
+  This binding describes anemometer wind sensors that output a pulse/frequency
+  signal proportional to wind speed. The driver counts pulses via GPIO interrupt
+  and calculates wind speed using configurable calibration parameters.
+
+properties:
+  compatible:
+    const: generic,anemometer
+
+  label:
+    $ref: /schemas/types.yaml#/definitions/string
+    description: Human-readable name for the sensor
+
+  gpios:
+    maxItems: 1
+    description: GPIO connected to the pulse output
+
+  window-size:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 1
+    maximum: 60
+    default: 5
+    description: Averaging window size in seconds
+
+  update-interval:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 100
+    maximum: 10000
+    default: 1000
+    description: Update interval in milliseconds
+
+  slope:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    default: 100
+    description: |
+      Slope numerator for calibration. Wind speed (m/s) = frequency (Hz) * slope / slope-div.
+      Default 100/1000 = 0.1 m/s per Hz.
+
+  slope-div:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    default: 1000
+    description: Slope denominator
+
+  offset:
+    $ref: /schemas/types.yaml#/definitions/int32
+    default: 0
+    description: Zero offset in micrometers per second (um/s)
+
+required:
+  - compatible
+  - label
+  - gpios
+
+additionalProperties: false
+
+examples:
+  - |
+    anemometer {
+        compatible = "generic,anemometer";
+
+        anemometer@0 {
+            label = "outdoor";
+            gpios = <&gpio 23 GPIO_ACTIVE_HIGH>;
+            window-size = <5>;
+            update-interval = <1000>;
+            slope = <100>;
+            slope-div = <1000>;
+            offset = <0>;
+        };
+    };

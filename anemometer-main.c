@@ -9,6 +9,7 @@
 #include <linux/interrupt.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
+#include <linux/ktime.h>
 #include "anemometer.h"
 
 static int __init anemometer_init(void);

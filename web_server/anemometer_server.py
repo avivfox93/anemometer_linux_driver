@@ -35,6 +35,7 @@ wind_data = {
     "timestamps": [],
     "speed_ms": [],
     "speed_kmh": [],
+    "speed_knots": [],
     "frequency": [],
     "sensor_name": None,
     "last_update": None
@@ -94,8 +95,11 @@ def data_collector(sensor_name, interval=1.0):
                 with data_lock:
                     wind_data["sensor_name"] = sensor_name
                     wind_data["timestamps"].append(data["timestamp"])
-                    wind_data["speed_ms"].append(data.get("wind_speed_ms", 0))
+                    speed_ms = data.get("wind_speed_ms", 0)
+                    wind_data["speed_ms"].append(speed_ms)
                     wind_data["speed_kmh"].append(data.get("wind_speed_kmh", 0))
+                    # Convert m/s to knots: 1 knot = 0.514444 m/s
+                    wind_data["speed_knots"].append(speed_ms * 1.94384)
                     wind_data["frequency"].append(data.get("frequency_hz", 0))
                     wind_data["last_update"] = data["timestamp"]
                     
@@ -104,6 +108,7 @@ def data_collector(sensor_name, interval=1.0):
                         wind_data["timestamps"] = wind_data["timestamps"][-MAX_HISTORY:]
                         wind_data["speed_ms"] = wind_data["speed_ms"][-MAX_HISTORY:]
                         wind_data["speed_kmh"] = wind_data["speed_kmh"][-MAX_HISTORY:]
+                        wind_data["speed_knots"] = wind_data["speed_knots"][-MAX_HISTORY:]
                         wind_data["frequency"] = wind_data["frequency"][-MAX_HISTORY:]
                         
         except Exception as e:
@@ -181,6 +186,7 @@ class AnemometerHandler(BaseHTTPRequestHandler):
                 "timestamps": wind_data["timestamps"][-limit:],
                 "speed_ms": wind_data["speed_ms"][-limit:],
                 "speed_kmh": wind_data["speed_kmh"][-limit:],
+                "speed_knots": wind_data["speed_knots"][-limit:],
                 "frequency": wind_data["frequency"][-limit:]
             }
         
@@ -219,6 +225,7 @@ class AnemometerHandler(BaseHTTPRequestHandler):
                             "timestamp": current,
                             "speed_ms": wind_data["speed_ms"][-1] if wind_data["speed_ms"] else 0,
                             "speed_kmh": wind_data["speed_kmh"][-1] if wind_data["speed_kmh"] else 0,
+                            "speed_knots": wind_data["speed_knots"][-1] if wind_data["speed_knots"] else 0,
                             "frequency": wind_data["frequency"][-1] if wind_data["frequency"] else 0
                         }
                         event = f"data: {json.dumps(data)}\n\n"
@@ -324,7 +331,8 @@ INDEX_HTML = '''<!DOCTYPE html>
         
         .wind-speed { color: #667eea; }
         .wind-speed-kmh { color: #f093fb; }
-        .frequency { color: #4facfe; }
+        .wind-speed-knots { color: #4facfe; }
+        .frequency { color: #f5576c; }
         
         .chart-container {
             background: white;
@@ -440,11 +448,19 @@ INDEX_HTML = '''<!DOCTYPE html>
             <div class="card">
                 <div class="card-title">Wind Speed</div>
                 <div class="card-value wind-speed-kmh">
-                    <span id="speed-kmh">-->/span>
+                    <span id="speed-kmh">--></span>
                     <span class="card-unit">km/h</span>
                 </div>
             </div>
-            
+
+            <div class="card">
+                <div class="card-title">Wind Speed</div>
+                <div class="card-value wind-speed-knots">
+                    <span id="speed-knots">--></span>
+                    <span class="card-unit">knots</span>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-title">Frequency</div>
                 <div class="card-value frequency">
@@ -601,6 +617,7 @@ INDEX_HTML = '''<!DOCTYPE html>
                 
                 document.getElementById('speed-ms').textContent = data.wind_speed_ms?.toFixed(3) || '--';
                 document.getElementById('speed-kmh').textContent = data.wind_speed_kmh?.toFixed(3) || '--';
+                document.getElementById('speed-knots').textContent = data.wind_speed_knots?.toFixed(3) || '--';
                 document.getElementById('frequency').textContent = data.frequency_hz?.toFixed(3) || '--';
                 document.getElementById('last-update').textContent = 
                     'Last update: ' + new Date().toLocaleTimeString();
@@ -639,11 +656,12 @@ INDEX_HTML = '''<!DOCTYPE html>
             
             evtSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
-                
+
                 document.getElementById('speed-ms').textContent = data.speed_ms.toFixed(3);
                 document.getElementById('speed-kmh').textContent = data.speed_kmh.toFixed(3);
+                document.getElementById('speed-knots').textContent = data.speed_knots.toFixed(3);
                 document.getElementById('frequency').textContent = data.frequency.toFixed(3);
-                document.getElementById('last-update').textContent = 
+                document.getElementById('last-update').textContent =
                     'Last update: ' + new Date().toLocaleTimeString();
                 
                 // Update chart

@@ -5,11 +5,12 @@ A Python HTTP server that provides real-time visualization of wind data from the
 ## Features
 
 - 🌐 Web-based dashboard with real-time charts
-- 📊 Multiple data views (m/s, km/h, frequency)
+- 📊 Multiple data views (m/s, km/h, **knots**, frequency)
 - 📈 Historical data graph (configurable time range)
 - 🔄 Auto-refresh with Server-Sent Events (SSE)
 - 📱 Responsive design (works on mobile)
 - 🔌 Multiple sensor support
+- ⚓ Nautical units (knots) for marine applications
 
 ## Requirements
 
@@ -79,6 +80,7 @@ Get historical data (last N samples)
   "timestamps": [...],
   "speed_ms": [...],
   "speed_kmh": [...],
+  "speed_knots": [...],
   "frequency": [...]
 }
 ```
@@ -94,6 +96,7 @@ data: {"timestamp": "...", "speed_ms": 12.345, ...}
 ### Real-time Cards
 - Wind Speed (m/s)
 - Wind Speed (km/h)
+- Wind Speed (knots) - *perfect for nautical use*
 - Pulse Frequency (Hz)
 
 ### Live Chart

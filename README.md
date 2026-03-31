@@ -22,6 +22,8 @@ This driver supports anemometer sensors that output a pulse signal with frequenc
 - ✓ Three instantiation methods
 - ✓ Linux 5.4+ and 6.x compatible
 - ✓ **Web Dashboard** - Real-time visualization (see `web_server/`)
+- ✓ **Pull-up/Pull-down** - Hardware GPIO configuration
+- ✓ **Debounce** - Hardware signal debouncing support
 
 ## Building
 
@@ -30,6 +32,28 @@ This driver supports anemometer sensors that output a pulse signal with frequenc
 - Linux kernel headers installed
 - GCC compiler
 - make
+
+#### Installing Kernel Headers
+
+**On Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install linux-headers-$(uname -r)
+```
+
+**On Raspberry Pi OS:**
+```bash
+sudo apt update
+sudo apt install raspberrypi-kernel-headers
+
+# If that doesn't work, try:
+sudo apt install linux-headers-rpi
+
+# Verify installation:
+ls /lib/modules/$(uname -r)/build
+```
+
+**Note:** If you see "No such file or directory" for the build directory after installing headers, you may need to reboot or the headers package might not match your running kernel version.
 
 ### Compile
 
@@ -245,6 +269,24 @@ Debounce is useful for:
 
 **Note:** Debounce configuration can only be changed when the sensor is stopped. Not all GPIO controllers support debouncing.
 
+### Important Hardware Configuration Notes
+
+**Pull Configuration Limitations:**
+- Software pull via sysfs may not work on all GPIO controllers
+- **Recommended:** Use device tree `bias-pull-up` or `bias-pull-down` properties for hardware pull configuration:
+  ```dts
+  gpios = <&gpio 23 GPIO_ACTIVE_HIGH | GPIO_PULL_UP>;
+  ```
+- Alternatively, use an external pull-up/pull-down resistor (typically 10kΩ)
+
+**Debounce Limitations:**
+- Hardware-dependent feature - not all GPIO controllers implement debouncing
+- Uses kernel's `gpiod_set_debounce()` function when available
+- If your GPIO controller doesn't support debouncing, consider:
+  - Using a hardware RC filter on the signal line
+  - Implementing debouncing in software (not in this driver)
+  - Using a sensor with built-in debouncing
+
 ## Testing
 
 Run the integration test script:
@@ -268,6 +310,8 @@ This will:
 | update-interval | 1000 | 100-10000 | Update interval in milliseconds |
 | slope | 100/1000 | - | Hz to m/s multiplier |
 | offset | 0 | - | Zero offset in μm/s |
+| pull | "none" | up/down/none | GPIO pull configuration |
+| debounce-us | 0 | 0+ | Debounce time in microseconds |
 
 ## Kernel Configuration
 

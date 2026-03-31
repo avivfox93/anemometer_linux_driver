@@ -92,6 +92,10 @@ void anemometer_dt_exit(void);
 int anemometer_sysfs_register(struct anemometer_sensor *sensor);
 void anemometer_sysfs_unregister(struct anemometer_sensor *sensor);
 
+/* sysfs store functions - also used by configfs */
+ssize_t window_size_store(struct device *dev, struct device_attribute *attr,
+                          const char *buf, size_t count);
+
 int anemometer_configfs_init(void);
 void anemometer_configfs_exit(void);
 

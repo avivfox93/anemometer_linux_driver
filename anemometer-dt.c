@@ -69,8 +69,10 @@ static int anemometer_dt_parse_sensor(struct device_node *np)
         sensor->slope_num = val;
     
     if (!of_property_read_u32(np, "slope-div", &val)) {
-        if (val == 0)
-            return -EINVAL;
+        if (val == 0) {
+            ret = -EINVAL;
+            goto err_irq;
+        }
         sensor->slope_den = val;
     }
     

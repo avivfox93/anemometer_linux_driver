@@ -32,6 +32,10 @@ GPIO 19 (Pin 35) ---[10kΩ]---+--- Sensor Signal --- GPIO 26 (Pin 37)
 - GPIO 26 reads the sensor (LOW when active, HIGH when idle due to pull-up)
 - When GPIO 19 is LOW, the sensor is unpowered (power saving)
 
+**Calibration:**
+- Configured for sensor: 40 m/s at 100 Hz (0.4 m/s per Hz)
+- slope = 400, slope-div = 1000
+
 **Installation:**
 
 1. **Copy and compile:**

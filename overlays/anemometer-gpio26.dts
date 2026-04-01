@@ -42,12 +42,13 @@
 					/* GPIO_ACTIVE_HIGH = 0, using numeric value */
 					gpios = <&gpio 26 0>;
 					
-					window-size = <5>;
-					update-interval = <1000>;
-					slope = <100>;
-					slope-div = <1000>;
-					offset = <0>;
-					pull = "up";
+				window-size = <5>;
+				update-interval = <1000>;
+				/* Calibration: 0.1 m/s per Hz (default). Adjust according to your sensor datasheet */
+				slope = <100>;
+				slope-div = <1000>;
+				offset = <0>;
+				pull = "up";
 				};
 			};
 		};

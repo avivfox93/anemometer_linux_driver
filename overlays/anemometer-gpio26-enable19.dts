@@ -65,12 +65,13 @@
 					enable-gpios = <&gpio 19 0>;	/* 0 = active high */
 					enable-active-high;				/* Explicitly mark as active high */
 					
-					window-size = <5>;		/* 5 second averaging window */
-					update-interval = <1000>;	/* 1 second update interval */
-					slope = <100>;			/* 0.1 m/s per Hz */
-					slope-div = <1000>;
-					offset = <0>;
-					pull = "up";
+				window-size = <5>;		/* 5 second averaging window */
+				update-interval = <1000>;	/* 1 second update interval */
+				/* Calibration: 40 m/s at 100 Hz = 0.4 m/s per Hz */
+				slope = <400>;			/* 400/1000 = 0.4 m/s per Hz */
+				slope-div = <1000>;
+				offset = <0>;
+				pull = "up";
 				};
 			};
 		};

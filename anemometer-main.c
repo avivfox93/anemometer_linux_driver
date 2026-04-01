@@ -91,9 +91,21 @@ static int anemometer_worker(void *data)
         
         sensor->frequency_millihz = freq;
         
-        /* Apply calibration: speed = freq * slope + offset */
-        speed = (s64)freq * sensor->slope_num / sensor->slope_den;
-        speed += sensor->offset;  /* offset already in um/s */
+        /* 
+         * Apply calibration: speed = freq * slope + offset
+         * freq is in millihertz (Hz * 1000)
+         * slope is slope_num/slope_den (m/s per Hz)
+         * Result should be in micrometers per second (m/s * 1000000)
+         * 
+         * Example: 20 Hz, slope 0.4 (400/1000)
+         * freq = 20000 mHz
+         * speed = 20000 * 400 / 1000 = 8000 (wrong!)
+         * 
+         * Correct: speed (um/s) = freq (mHz) * slope_num / slope_den * 1000
+         * speed = 20000 * 400 / 1000 * 1000 = 8000000 um/s = 8 m/s
+         */
+        speed = (s64)freq * sensor->slope_num * 1000 / sensor->slope_den;
+        speed += sensor->offset;  /* offset in um/s */
         sensor->wind_speed_um_s = (s32)speed;
         
         mutex_unlock(&sensor->lock);

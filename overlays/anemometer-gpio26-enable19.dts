@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: GPL-2.0
+// Anemometer Device Tree Overlay for Raspberry Pi 4
+// 
+// Hardware Configuration:
+// - GPIO 26 (Physical Pin 37): Sensor input with pull-up
+// - GPIO 19 (Physical Pin 35): Enable output (powers the pull-up resistor)
+//
+// Wiring:
+//   GPIO 19 (Pin 35) ---[10kΩ]--- Sensor Signal --- GPIO 26 (Pin 37)
+//                                      |
+//                                    GND
+//
+// When GPIO 19 is HIGH, the pull-up resistor provides power to the sensor.
+// The sensor pulls the line LOW when active (open-collector/open-drain).
+//
+// Usage:
+// 1. Copy to /boot/overlays/anemometer-gpio26-enable19.dts
+// 2. Compile: sudo dtc -I dts -O dtb -o /boot/overlays/anemometer-gpio26-enable19.dtbo /boot/overlays/anemometer-gpio26-enable19.dts
+// 3. Enable: Add to /boot/config.txt: dtoverlay=anemometer-gpio26-enable19
+// 4. Reboot
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2711";
+
+	/* Fragment to configure GPIO pins */
+	fragment@0 {
+		target = <&gpio>;
+		__overlay__ {
+			/* Configure GPIO 19 as output (enable/power pin) */
+			anemometer_enable_pin: anemometer_enable_pin {
+				brcm,pins = <19>;		/* GPIO 19 (Physical Pin 35) */
+				brcm,function = <1>;	/* 1 = output */
+				brcm,pull = <0>;		/* 0 = none (we'll drive it) */
+			};
+			
+			/* Configure GPIO 26 as input with pull-up */
+			anemometer_sensor_pin: anemometer_sensor_pin {
+				brcm,pins = <26>;		/* GPIO 26 (Physical Pin 37) */
+				brcm,function = <0>;	/* 0 = input */
+				brcm,pull = <2>;		/* 2 = pull-up */
+			};
+		};
+	};
+
+	/* Fragment to create anemometer node */
+	fragment@1 {
+		target-path = "/";
+		__overlay__ {
+			anemometer {
+				compatible = "generic,anemometer";
+				status = "okay";
+				pinctrl-names = "default";
+				pinctrl-0 = <&anemometer_sensor_pin>;
+
+				sensor@0 {
+					label = "wind";
+					
+					/* Sensor GPIO: GPIO 26, active low (using pull-up) */
+					gpios = <&gpio 26 1>;	/* 1 = active low (GPIO_ACTIVE_LOW) */
+					
+					/* Enable GPIO: GPIO 19, active high (powers pull-up) */
+					enable-gpios = <&gpio 19 0>;	/* 0 = active high */
+					enable-active-high;				/* Explicitly mark as active high */
+					
+					window-size = <5>;		/* 5 second averaging window */
+					update-interval = <1000>;	/* 1 second update interval */
+					slope = <100>;			/* 0.1 m/s per Hz */
+					slope-div = <1000>;
+					offset = <0>;
+					pull = "up";
+				};
+			};
+		};
+	};
+
+	/* Fragment to set initial state of enable pin (GPIO 19 high) */
+	fragment@2 {
+		target = <&gpio>;
+		__overlay__ {
+			/* Ensure GPIO 19 starts high to power the sensor */
+			pinctrl-1 = <&anemometer_enable_pin>;
+		};
+	};
+};

@@ -98,6 +98,30 @@ static int anemometer_dt_parse_sensor(struct device_node *np)
     if (!of_property_read_u32(np, "debounce-us", &val))
         sensor->debounce_us = val;
 
+    /* Parse enable GPIO configuration */
+    ret = of_get_named_gpio(np, "enable-gpios", 0);
+    if (ret >= 0) {
+        sensor->enable_gpio = gpio_to_desc(ret);
+        if (sensor->enable_gpio) {
+            /* Check if enable is active high or low */
+            sensor->enable_gpio_inverted = 
+                of_property_read_bool(np, "enable-active-high") ? false : true;
+            
+            /* Configure enable GPIO as output */
+            ret = gpiod_direction_output(sensor->enable_gpio, 
+                                         sensor->enable_gpio_inverted ? 0 : 1);
+            if (ret) {
+                pr_warn("anemometer: failed to configure enable GPIO for '%s': %d\n", 
+                        name, ret);
+                gpiod_put(sensor->enable_gpio);
+                sensor->enable_gpio = NULL;
+            } else {
+                pr_info("anemometer: enable GPIO configured for '%s' (active-%s)\n",
+                        name, sensor->enable_gpio_inverted ? "low" : "high");
+            }
+        }
+    }
+
     /* Request IRQ */
     ret = request_irq(sensor->irq, anemometer_irq_handler,
                        IRQF_TRIGGER_RISING, "anemometer", sensor);

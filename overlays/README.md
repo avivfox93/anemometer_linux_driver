@@ -8,6 +8,63 @@ This directory contains Device Tree overlays for various hardware configurations
 
 Raspberry Pi overlay for anemometer on GPIO 26 with pull-up enabled.
 
+### `anemometer-gpio26-enable19.dts` (Recommended for Power Control)
+
+Raspberry Pi 4 overlay with sensor on GPIO 26 and enable pin on GPIO 19.
+
+**Use Case:** Power-controlled anemometer where GPIO 19 provides power to the pull-up resistor.
+
+**Hardware:**
+- **GPIO 26** (Physical Pin 37): Sensor input, active-low (open-collector with pull-up)
+- **GPIO 19** (Physical Pin 35): Enable output, active-high (powers the pull-up resistor)
+
+**Wiring:**
+```
+GPIO 19 (Pin 35) ---[10kΩ]---+--- Sensor Signal --- GPIO 26 (Pin 37)
+                             |
+                           Sensor
+                             |
+                            GND
+```
+
+**How it works:**
+- GPIO 19 is set HIGH to power the pull-up resistor
+- GPIO 26 reads the sensor (LOW when active, HIGH when idle due to pull-up)
+- When GPIO 19 is LOW, the sensor is unpowered (power saving)
+
+**Installation:**
+
+1. **Copy and compile:**
+   ```bash
+   sudo cp overlays/anemometer-gpio26-enable19.dts /boot/overlays/
+   sudo dtc -I dts -O dtb -o /boot/overlays/anemometer-gpio26-enable19.dtbo /boot/overlays/anemometer-gpio26-enable19.dts
+   ```
+
+2. **Enable in `/boot/config.txt`:**
+   ```
+   # Add at the end of the file:
+   dtoverlay=anemometer-gpio26-enable19
+   ```
+
+3. **Reboot:**
+   ```bash
+   sudo reboot
+   ```
+
+4. **Verify:**
+   ```bash
+   ls /sys/class/anemometer/
+   # Should show: wind
+   
+   cat /sys/class/anemometer/wind/wind_speed_ms
+   # Enable GPIO status is automatic - GPIO 19 will be HIGH when driver loads
+   ```
+
+**Benefits:**
+- Power saving: Turn off sensor when not needed
+- Clean startup: Sensor powered only after driver initializes
+- External control: Can disable sensor via GPIO 19 if needed
+
 **Hardware:**
 - GPIO: GPIO 26 (Physical Pin 37)
 - Pull-up: Enabled (internal)

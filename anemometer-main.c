@@ -32,13 +32,6 @@ irqreturn_t anemometer_irq_handler(int irq, void *dev_id)
     
     atomic_inc(&sensor->pulse_count);
     sensor->last_pulse_time = ktime_get_seconds();
-    
-    /* Debug: log every 10th pulse */
-    if (atomic_read(&sensor->pulse_count) % 10 == 0) {
-        pr_info("anemometer %s: pulse count = %d\n", 
-                sensor->name, atomic_read(&sensor->pulse_count));
-    }
-    
     return IRQ_HANDLED;
 }
 
@@ -78,13 +71,8 @@ static int anemometer_worker(void *data)
              * Frequency (millihz) = sum * 1000000 / (buffer_count * update_interval_ms)
              */
             freq = (sum * 1000000) / (sensor->buffer_count * sensor->update_interval_ms);
-            
-            /* Debug output */
-            pr_info("anemometer %s: pulses=%u, sum=%u, count=%u, freq=%u mHz\n",
-                    sensor->name, pulses, sum, sensor->buffer_count, freq);
         } else {
             freq = 0;
-            pr_info("anemometer %s: buffer empty, freq=0\n", sensor->name);
         }
         
         /* Check for impossible frequency */

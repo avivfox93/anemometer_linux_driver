@@ -410,6 +410,148 @@ static ssize_t debounce_us_store(struct device *dev,
     return count;
 }
 
+/* Show GPIO line name */
+static ssize_t gpio_name_show(struct device *dev,
+                              struct device_attribute *attr, char *buf)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    mutex_lock(&sensor->lock);
+    if (strlen(sensor->gpio_name) > 0)
+        sprintf(buf, "%s\n", sensor->gpio_name);
+    else
+        sprintf(buf, "(legacy)\n");
+    mutex_unlock(&sensor->lock);
+    
+    return strlen(buf);
+}
+
+/* Store GPIO line name */
+static ssize_t gpio_name_store(struct device *dev,
+                               struct device_attribute *attr,
+                               const char *buf, size_t count)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    mutex_lock(&sensor->lock);
+    
+    /* Can only change when sensor is not running */
+    if (sensor->running) {
+        mutex_unlock(&sensor->lock);
+        return -EBUSY;
+    }
+    
+    strscpy(sensor->gpio_name, buf, sizeof(sensor->gpio_name));
+    /* Remove trailing newline if present */
+    if (sensor->gpio_name[strlen(sensor->gpio_name) - 1] == '\n')
+        sensor->gpio_name[strlen(sensor->gpio_name) - 1] = '\0';
+    
+    mutex_unlock(&sensor->lock);
+    
+    return count;
+}
+
+/* Show enable GPIO line name */
+static ssize_t enable_gpio_show(struct device *dev,
+                                struct device_attribute *attr, char *buf)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    mutex_lock(&sensor->lock);
+    if (strlen(sensor->enable_gpio_name) > 0)
+        sprintf(buf, "%s\n", sensor->enable_gpio_name);
+    else
+        sprintf(buf, "none\n");
+    mutex_unlock(&sensor->lock);
+    
+    return strlen(buf);
+}
+
+/* Store enable GPIO line name */
+static ssize_t enable_gpio_store(struct device *dev,
+                                 struct device_attribute *attr,
+                                 const char *buf, size_t count)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    mutex_lock(&sensor->lock);
+    
+    /* Can only change when sensor is not running */
+    if (sensor->running) {
+        mutex_unlock(&sensor->lock);
+        return -EBUSY;
+    }
+    
+    strscpy(sensor->enable_gpio_name, buf, sizeof(sensor->enable_gpio_name));
+    /* Remove trailing newline if present */
+    if (sensor->enable_gpio_name[strlen(sensor->enable_gpio_name) - 1] == '\n')
+        sensor->enable_gpio_name[strlen(sensor->enable_gpio_name) - 1] = '\0';
+    
+    mutex_unlock(&sensor->lock);
+    
+    return count;
+}
+
+/* Show enable GPIO inverted status */
+static ssize_t enable_inverted_show(struct device *dev,
+                                    struct device_attribute *attr, char *buf)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    mutex_lock(&sensor->lock);
+    sprintf(buf, "%d\n", sensor->enable_gpio_inverted);
+    mutex_unlock(&sensor->lock);
+    
+    return strlen(buf);
+}
+
+/* Store enable GPIO inverted status */
+static ssize_t enable_inverted_store(struct device *dev,
+                                     struct device_attribute *attr,
+                                     const char *buf, size_t count)
+{
+    struct anemometer_sensor *sensor = dev_get_drvdata(dev);
+    int val;
+    
+    if (!sensor)
+        return -ENODEV;
+    
+    if (kstrtoint(buf, 10, &val))
+        return -EINVAL;
+    
+    if (val != 0 && val != 1)
+        return -EINVAL;
+    
+    mutex_lock(&sensor->lock);
+    
+    /* Can only change when sensor is not running */
+    if (sensor->running) {
+        mutex_unlock(&sensor->lock);
+        return -EBUSY;
+    }
+    
+    sensor->enable_gpio_inverted = val;
+    
+    mutex_unlock(&sensor->lock);
+    
+    return count;
+}
+
 /* Define attributes */
 static DEVICE_ATTR_RO(raw_pulses);
 static DEVICE_ATTR_RO(frequency_hz);
@@ -417,6 +559,9 @@ static DEVICE_ATTR_RO(wind_speed_ms);
 static DEVICE_ATTR_RO(wind_speed_kmh);
 static DEVICE_ATTR_RO(pulse_count_total);
 static DEVICE_ATTR_RO(stale);
+static DEVICE_ATTR_RW(gpio_name);
+static DEVICE_ATTR_RW(enable_gpio);
+static DEVICE_ATTR_RW(enable_inverted);
 static DEVICE_ATTR_RW(slope);
 static DEVICE_ATTR_RW(offset);
 static DEVICE_ATTR_RW(window_size);
@@ -431,6 +576,9 @@ static struct attribute *anemometer_attrs[] = {
     &dev_attr_wind_speed_kmh.attr,
     &dev_attr_pulse_count_total.attr,
     &dev_attr_stale.attr,
+    &dev_attr_gpio_name.attr,
+    &dev_attr_enable_gpio.attr,
+    &dev_attr_enable_inverted.attr,
     &dev_attr_slope.attr,
     &dev_attr_offset.attr,
     &dev_attr_window_size.attr,

@@ -38,8 +38,14 @@ enum anemometer_pull {
 
 struct anemometer_sensor {
     char name[32];
+    char gpio_name[32];           /* GPIO line name for modern APIs */
     struct gpio_desc *gpio;
     int irq;
+    
+    /* Optional enable GPIO */
+    char enable_gpio_name[32];    /* Enable GPIO line name */
+    struct gpio_desc *enable_gpio;
+    bool enable_gpio_inverted;    /* If true, active low */
     
     /* Configuration */
     u32 window_size;

@@ -21,6 +21,15 @@ struct anemometer_drv anemometer_drv;
 irqreturn_t anemometer_irq_handler(int irq, void *dev_id)
 {
     struct anemometer_sensor *sensor = dev_id;
+    
+    /* Check if enable GPIO is configured and active */
+    if (sensor->enable_gpio) {
+        int val = gpiod_get_value(sensor->enable_gpio);
+        bool enabled = sensor->enable_gpio_inverted ? (val == 0) : (val != 0);
+        if (!enabled)
+            return IRQ_HANDLED;  /* Sensor disabled, ignore pulse */
+    }
+    
     atomic_inc(&sensor->pulse_count);
     sensor->last_pulse_time = ktime_get_seconds();
     return IRQ_HANDLED;
@@ -166,6 +175,8 @@ struct anemometer_sensor *anemometer_sensor_find(const char *name)
     return NULL;
 }
 
+
+
 int anemometer_sensor_setup_gpio(struct anemometer_sensor *sensor, u32 gpio_num)
 {
     int ret;
@@ -185,34 +196,40 @@ int anemometer_sensor_setup_gpio(struct anemometer_sensor *sensor, u32 gpio_num)
     
     ret = gpiod_direction_input(sensor->gpio);
     if (ret) {
-        pr_err("anemometer: failed to set GPIO %u as input: %d\n", gpio_num, ret);
+        pr_err("anemometer: failed to set GPIO as input: %d\n", ret);
         return ret;
     }
     
     /* Configure pull-up/pull-down if specified */
-    /* Note: gpiod_set_pull() is not available in all kernel versions.
-     * On newer kernels, use device tree "bias-pull-up" / "bias-pull-down" properties.
-     * On older kernels, pull may need to be configured via platform-specific means.
-     */
     if (sensor->pull != ANEMOMETER_PULL_NONE) {
-        pr_info("anemometer: GPIO %u pull-%s requested (device tree bias-* properties recommended)\n",
-                gpio_num, sensor->pull == ANEMOMETER_PULL_UP ? "up" : "down");
+        pr_info("anemometer: GPIO pull-%s requested (device tree bias-* properties recommended)\n",
+                sensor->pull == ANEMOMETER_PULL_UP ? "up" : "down");
     }
     
     /* Configure debounce if specified */
     if (sensor->debounce_us > 0) {
         ret = gpiod_set_debounce(sensor->gpio, sensor->debounce_us);
         if (ret) {
-            pr_warn("anemometer: failed to set debounce on GPIO %u: %d\n", gpio_num, ret);
-            /* Continue anyway - not all GPIO controllers support this */
+            pr_warn("anemometer: failed to set debounce: %d\n", ret);
         } else {
-            pr_info("anemometer: GPIO %u debounce %u us configured\n", gpio_num, sensor->debounce_us);
+            pr_info("anemometer: GPIO debounce %u us configured\n", sensor->debounce_us);
         }
+    }
+    
+    /* 
+     * Setup enable GPIO if specified.
+     * Note: Enable GPIO must be configured via device tree.
+     * The sysfs interface allows setting the name for documentation purposes.
+     */
+    if (strlen(sensor->enable_gpio_name) > 0) {
+        pr_info("anemometer: enable GPIO '%s' configured (inverted=%d)\n",
+                sensor->enable_gpio_name, sensor->enable_gpio_inverted);
+        pr_info("anemometer: Enable GPIO is controlled via device tree - see README.md\n");
     }
     
     sensor->irq = gpiod_to_irq(sensor->gpio);
     if (sensor->irq < 0) {
-        pr_err("anemometer: failed to get IRQ for GPIO %u: %d\n", gpio_num, sensor->irq);
+        pr_err("anemometer: failed to get IRQ: %d\n", sensor->irq);
         return sensor->irq;
     }
     

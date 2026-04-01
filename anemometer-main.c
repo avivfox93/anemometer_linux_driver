@@ -57,13 +57,20 @@ static int anemometer_worker(void *data)
         if (sensor->buffer_count < sensor->window_size)
             sensor->buffer_count++;
         
-        /* Calculate frequency */
+        /* Calculate frequency in millihertz (Hz * 1000) */
         sum = 0;
         for (i = 0; i < sensor->buffer_count; i++)
             sum += sensor->pulse_buffer[i];
         
         if (sensor->buffer_count > 0)
-            freq = (sum * 1000) / (sensor->buffer_count * sensor->update_interval_ms);
+            /* 
+             * Frequency (Hz) = pulses / time (seconds)
+             * time = buffer_count * update_interval_ms / 1000
+             * Frequency (Hz) = sum / (buffer_count * update_interval_ms / 1000)
+             *                = sum * 1000 / (buffer_count * update_interval_ms)
+             * Frequency (millihz) = sum * 1000000 / (buffer_count * update_interval_ms)
+             */
+            freq = (sum * 1000000) / (sensor->buffer_count * sensor->update_interval_ms);
         else
             freq = 0;
         
